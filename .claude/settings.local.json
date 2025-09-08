@@ -29,7 +29,9 @@
       "Bash(./integration_test.sh:*)",
       "Bash(swift build:*)",
       "Bash(/dev/null)",
-      "Bash(./build_app.sh:*)"
+      "Bash(./build_app.sh:*)",
+      "Bash(./sign-app.sh:*)",
+      "Bash(./create-dmg.sh:*)"
     ],
     "deny": [],
     "ask": []
