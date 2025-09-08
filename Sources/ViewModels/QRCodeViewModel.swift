@@ -1,0 +1,108 @@
+import SwiftUI
+import Combine
+
+@MainActor
+class QRCodeViewModel: ObservableObject {
+    @Published var inputText: String = "" {
+        didSet {
+            scheduleQRCodeGeneration()
+        }
+    }
+    
+    @Published var qrCodeImage: NSImage?
+    @Published var errorCorrectionLevel: ErrorCorrectionLevel = .medium {
+        didSet {
+            generateQRCode()
+        }
+    }
+    
+    @Published var isExporting = false
+    @Published var exportMessage: String?
+    @Published var error: QRCodeError?
+    
+    private let qrGenerator = QRCodeGenerator()
+    private let fileExporter = FileExportService()
+    private var generateWorkItem: DispatchWorkItem?
+    
+    var canExport: Bool {
+        qrCodeImage != nil && !inputText.isEmpty
+    }
+    
+    private func scheduleQRCodeGeneration() {
+        generateWorkItem?.cancel()
+        
+        let workItem = DispatchWorkItem { [weak self] in
+            Task { @MainActor in
+                self?.generateQRCode()
+            }
+        }
+        
+        generateWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
+    }
+    
+    func generateQRCode() {
+        error = nil
+        
+        guard !inputText.isEmpty else {
+            qrCodeImage = nil
+            return
+        }
+        
+        let validationResult = QRCodeValidator.validate(text: inputText, correctionLevel: errorCorrectionLevel)
+        if case .failure(let validationError) = validationResult {
+            error = validationError
+            qrCodeImage = nil
+            return
+        }
+        
+        guard let image = qrGenerator.generate(from: inputText, correctionLevel: errorCorrectionLevel) else {
+            error = .generationFailed
+            qrCodeImage = nil
+            return
+        }
+        
+        qrCodeImage = image
+    }
+    
+    func exportToSVG(withDialog: Bool = false) {
+        guard canExport else { return }
+        
+        isExporting = true
+        exportMessage = nil
+        error = nil
+        
+        Task {
+            defer { isExporting = false }
+            
+            guard let svgContent = qrGenerator.convertToSVG(from: inputText, correctionLevel: errorCorrectionLevel) else {
+                error = .exportFailed(reason: "Failed to generate SVG content")
+                return
+            }
+            
+            let result: ExportResult
+            if withDialog {
+                result = fileExporter.saveWithDialog(content: svgContent)
+            } else {
+                result = fileExporter.saveToDownloads(content: svgContent)
+            }
+            
+            if result.success {
+                exportMessage = "Saved as \(result.filename)"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                    self?.exportMessage = nil
+                }
+            } else if let error = result.error {
+                let nsError = error as NSError
+                if nsError.code != 2 {
+                    self.error = .exportFailed(reason: error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    func clearMessages() {
+        exportMessage = nil
+        error = nil
+    }
+}
