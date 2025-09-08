@@ -150,7 +150,7 @@
   - _Leverage: XCTest_
   - _Requirements: All service methods_
 
-- [ ] 18. Write UI tests
+- [x] 18. Write UI tests
   - File: UITests/QRCodeGeneratorUITests.swift
   - Test text input and automatic generation
   - Test error correction level changes
@@ -159,7 +159,7 @@
   - _Leverage: XCUITest_
   - _Requirements: All user stories_
 
-- [ ] 19. Configure build settings
+- [x] 19. Configure build settings
   - File: QRCodeGenerator.xcodeproj
   - Set up code signing
   - Configure release build optimizations
@@ -167,7 +167,7 @@
   - Purpose: Prepare for distribution
   - _Requirements: 4.1_
 
-- [ ] 20. Final integration and testing
+- [x] 20. Final integration and testing
   - File: All components
   - Run full application flow tests
   - Verify all requirements are met

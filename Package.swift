@@ -17,7 +17,29 @@ let package = Package(
         .executableTarget(
             name: "QRCodeGenerator",
             dependencies: [],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .copy("Resources/Assets.xcassets")
+            ],
+            swiftSettings: [
+                .unsafeFlags([
+                    "-cross-module-optimization"
+                ], .when(configuration: .release)),
+                .unsafeFlags([
+                    "-Xfrontend", "-warn-long-function-bodies=100",
+                    "-Xfrontend", "-warn-long-expression-type-checking=100"
+                ], .when(configuration: .debug))
+            ],
+            linkerSettings: [
+                .linkedFramework("CoreImage"),
+                .linkedFramework("AppKit"),
+                .linkedFramework("SwiftUI")
+            ]
+        ),
+        .testTarget(
+            name: "QRCodeGeneratorTests",
+            dependencies: ["QRCodeGenerator"],
+            path: "Tests"
         )
     ]
 )

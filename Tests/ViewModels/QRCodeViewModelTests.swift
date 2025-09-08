@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-@testable import QRCodeGeneratorLib
+@testable import QRCodeGenerator
 
 final class QRCodeViewModelTests: XCTestCase {
     

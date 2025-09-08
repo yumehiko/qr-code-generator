@@ -12,6 +12,9 @@ struct ContentView: View {
                 
                 // Keyboard shortcuts help text
                 HStack(spacing: 20) {
+                    Label("⌘C: Copy", systemImage: "keyboard")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     Label("⌘E: Export", systemImage: "keyboard")
                         .font(.caption)
                         .foregroundColor(.secondary)

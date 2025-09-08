@@ -101,6 +101,34 @@ class QRCodeViewModel: ObservableObject {
         }
     }
     
+    func copyToClipboard() {
+        guard qrCodeImage != nil else {
+            error = .exportFailed(reason: "No QR code to copy")
+            return
+        }
+        
+        // Generate SVG content
+        guard let svgContent = qrGenerator.convertToSVG(from: inputText, correctionLevel: errorCorrectionLevel) else {
+            error = .exportFailed(reason: "Failed to generate SVG")
+            return
+        }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        
+        // Set SVG as text only (for Illustrator, code editors, browsers)
+        let success = pasteboard.setString(svgContent, forType: .string)
+        
+        if success {
+            exportMessage = "Copied SVG to clipboard"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                self?.exportMessage = nil
+            }
+        } else {
+            error = .exportFailed(reason: "Failed to copy to clipboard")
+        }
+    }
+    
     func clearMessages() {
         exportMessage = nil
         error = nil

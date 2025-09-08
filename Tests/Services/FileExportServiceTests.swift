@@ -1,5 +1,5 @@
 import XCTest
-@testable import QRCodeGeneratorLib
+@testable import QRCodeGenerator
 
 final class FileExportServiceTests: XCTestCase {
     
