@@ -126,4 +126,9 @@ Issue や PR に秘密の実値、認証情報、個人環境の絶対パスを�
 
 ## License
 
-MIT License
+This project is licensed under the [MIT License](LICENSE).
+
+The MIT License covers the application source code and repository-owned
+assets, including the self-created `Icon.ai` editable source and its derived
+icons such as `AppIcon.icns` and the app icon assets. Third-party materials, if
+added in the future, remain subject to their own license notices.
