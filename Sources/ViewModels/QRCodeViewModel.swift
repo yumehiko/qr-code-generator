@@ -19,10 +19,15 @@ class QRCodeViewModel: ObservableObject {
     @Published var isExporting = false
     @Published var exportMessage: String?
     @Published var error: QRCodeError?
+    @Published private(set) var decodedContents: [String] = []
+    @Published private(set) var isReading = false
+    @Published private(set) var readErrorMessage: String?
+    @Published private(set) var readCopyMessage: String?
     
     private let qrGenerator = QRCodeGenerator()
     private let fileExporter = FileExportService()
     private var generateWorkItem: DispatchWorkItem?
+    private var readTask: Task<Void, Never>?
     
     var canExport: Bool {
         qrCodeImage != nil && !inputText.isEmpty
@@ -127,6 +132,51 @@ class QRCodeViewModel: ObservableObject {
         } else {
             error = .exportFailed(reason: "Failed to copy to clipboard")
         }
+    }
+
+    func readQRCode(from url: URL) {
+        readTask?.cancel()
+        decodedContents = []
+        readErrorMessage = nil
+        readCopyMessage = nil
+        isReading = true
+
+        readTask = Task { [weak self] in
+            let result = await Task.detached {
+                QRCodeReader().read(from: url)
+            }.value
+
+            guard !Task.isCancelled else { return }
+
+            self?.isReading = false
+            switch result {
+            case .success(let contents):
+                self?.decodedContents = contents
+            case .failure(let error):
+                self?.readErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func copyDecodedContent(_ content: String) {
+        NSPasteboard.general.clearContents()
+
+        if NSPasteboard.general.setString(content, forType: .string) {
+            readCopyMessage = "Copied QR code content"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                self?.readCopyMessage = nil
+            }
+        } else {
+            readErrorMessage = "Failed to copy QR code content."
+        }
+    }
+
+    func reportImageSelectionFailure(_ error: Error) {
+        readTask?.cancel()
+        decodedContents = []
+        readCopyMessage = nil
+        isReading = false
+        readErrorMessage = "Could not select image: \(error.localizedDescription)"
     }
     
     func clearMessages() {

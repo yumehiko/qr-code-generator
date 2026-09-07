@@ -13,7 +13,7 @@ A native macOS application for generating QR codes with real-time preview and SV
 ## Requirements
 
 - macOS 11.0 (Big Sur) or later
-- Xcode 13.0 or later (for building from source)
+- Xcode 14.0 or later (for building from source)
 
 ## Building from Source
 
@@ -101,6 +101,11 @@ remain manual macOS checks because they require user-session services.
    - Click "Save to Downloads" to save directly
    - Hold Option (⌥) and click to choose save location
    - Use Cmd+S keyboard shortcut
+5. **Read a QR Code from an Image**:
+   - Click **Read Image** in the toolbar or **Select Image...** in the reader section
+   - Choose an image file containing one or more QR codes
+   - Review each detected value and use its copy button to put that value on the clipboard
+   - Reading stays on your Mac. URLs are shown as text and are never opened automatically.
 
 ## Architecture
 

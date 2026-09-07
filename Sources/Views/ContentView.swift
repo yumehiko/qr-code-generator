@@ -1,7 +1,9 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @StateObject private var viewModel = QRCodeViewModel()
+    @State private var isImportingImage = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -32,20 +34,28 @@ struct ContentView: View {
             Divider()
             
             // Lower section: Input and Controls
-            HStack(spacing: 16) {
-                TextInputView(
-                    text: $viewModel.inputText,
-                    error: viewModel.error
-                )
-                .frame(maxWidth: .infinity)
-                
-                ControlsView(
-                    errorCorrectionLevel: $viewModel.errorCorrectionLevel,
-                    viewModel: viewModel
-                )
+            VStack(spacing: 12) {
+                HStack(spacing: 16) {
+                    TextInputView(
+                        text: $viewModel.inputText,
+                        error: viewModel.error
+                    )
+                    .frame(maxWidth: .infinity)
+
+                    ControlsView(
+                        errorCorrectionLevel: $viewModel.errorCorrectionLevel,
+                        viewModel: viewModel
+                    )
+                }
+
+                Divider()
+
+                QRCodeReadResultsView(viewModel: viewModel) {
+                    isImportingImage = true
+                }
             }
             .padding()
-            .frame(height: 120)
+            .frame(minHeight: 120)
         }
         .background(Color(NSColor.windowBackgroundColor))
         .navigationTitle("QR Code Generator")
@@ -60,6 +70,14 @@ struct ContentView: View {
                 .disabled(viewModel.inputText.isEmpty)
                 .help("Clear text input")
             }
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    isImportingImage = true
+                } label: {
+                    Label("Read Image", systemImage: "viewfinder")
+                }
+                .help("Select an image and read its QR codes")
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ClearText"))) { _ in
             viewModel.inputText = ""
@@ -69,6 +87,22 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("SaveAs"))) { _ in
             viewModel.exportToSVG(withDialog: true)
+        }
+        .fileImporter(
+            isPresented: $isImportingImage,
+            allowedContentTypes: [.image],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    viewModel.readQRCode(from: url)
+                }
+            case .failure(let error):
+                if (error as NSError).code != NSUserCancelledError {
+                    viewModel.reportImageSelectionFailure(error)
+                }
+            }
         }
     }
 }
