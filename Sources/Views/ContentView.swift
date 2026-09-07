@@ -99,7 +99,9 @@ struct ContentView: View {
                     viewModel.readQRCode(from: url)
                 }
             case .failure(let error):
-                viewModel.reportImageSelectionFailure(error)
+                if (error as NSError).code != NSUserCancelledError {
+                    viewModel.reportImageSelectionFailure(error)
+                }
             }
         }
     }

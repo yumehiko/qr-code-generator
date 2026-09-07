@@ -75,6 +75,16 @@ final class QRCodeGeneratorTests: XCTestCase {
         XCTAssertEqual(try result.get(), [text])
     }
 
+    func testReaderPreservesLongPayloadIncludingItsEnding() throws {
+        let text = String(repeating: "long QR content ", count: 40) + "末尾"
+        let image = try XCTUnwrap(QRCodeGenerator().generate(from: text, correctionLevel: .medium))
+        let cgImage = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+
+        let result = QRCodeReader().read(from: cgImage)
+
+        XCTAssertEqual(try result.get(), [text])
+    }
+
     func testReaderReportsNoQRCodeForPlainImage() throws {
         let image = try XCTUnwrap(makeSolidImage(width: 100, height: 100))
 

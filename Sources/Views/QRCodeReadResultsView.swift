@@ -34,27 +34,32 @@ struct QRCodeReadResultsView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                ForEach(Array(viewModel.decodedContents.enumerated()), id: \.offset) { index, content in
-                    HStack(alignment: .top, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("QR Code \(index + 1)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(content)
-                                .lineLimit(3)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(viewModel.decodedContents.enumerated()), id: \.offset) { index, content in
+                            HStack(alignment: .top, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("QR Code \(index + 1)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(content)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 8)
+                                Button {
+                                    viewModel.copyDecodedContent(content)
+                                } label: {
+                                    Image(systemName: "doc.on.doc")
+                                }
+                                .help("Copy this QR code content")
+                            }
+                            .padding(8)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(6)
                         }
-                        Spacer(minLength: 8)
-                        Button {
-                            viewModel.copyDecodedContent(content)
-                        } label: {
-                            Image(systemName: "doc.on.doc")
-                        }
-                        .help("Copy this QR code content")
                     }
-                    .padding(8)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(6)
                 }
+                .frame(maxHeight: 220)
             }
 
             if let message = viewModel.readCopyMessage {
