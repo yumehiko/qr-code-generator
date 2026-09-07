@@ -108,6 +108,8 @@ jobs:
       - name: Notarize and staple app
         run: scripts/notarize.sh app "dist/QR Code Generator.app" "$NOTARIZATION_KEY_PATH" "$APPSTORE_CONNECT_KEY_ID"
       - name: Package, notarize, and staple DMG
+        env:
+          SIGNING_IDENTITY: ${{ steps.signing.outputs.identity }}
         run: |
           scripts/create-dmg.sh "$RELEASE_VERSION"
           scripts/notarize.sh dmg "dist/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg" "$NOTARIZATION_KEY_PATH" "$APPSTORE_CONNECT_KEY_ID"
