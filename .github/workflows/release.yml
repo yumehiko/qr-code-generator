@@ -46,14 +46,18 @@ jobs:
       BUILD_VERSION: ${{ github.run_number }}
       APPSTORE_CONNECT_ISSUER_ID: ${{ secrets.APPSTORE_CONNECT_ISSUER_ID }}
       APPSTORE_CONNECT_KEY_ID: ${{ secrets.APPSTORE_CONNECT_KEY_ID }}
-      CERTIFICATE_PATH: ${{ runner.temp }}/developer-id.p12
-      SIGNING_KEYCHAIN_PATH: ${{ runner.temp }}/signing.keychain-db
-      NOTARIZATION_KEY_PATH: ${{ runner.temp }}/notarization-api-key.p8
-      KEYCHAIN_SEARCH_LIST_PATH: ${{ runner.temp }}/original-keychain-search-list
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.preflight.outputs.release_commit }}
+      - name: Prepare temporary credential paths
+        run: |
+          set -euo pipefail
+          umask 077
+          printf 'CERTIFICATE_PATH=%s\n' "$RUNNER_TEMP/developer-id.p12" >> "$GITHUB_ENV"
+          printf 'SIGNING_KEYCHAIN_PATH=%s\n' "$RUNNER_TEMP/signing.keychain-db" >> "$GITHUB_ENV"
+          printf 'NOTARIZATION_KEY_PATH=%s\n' "$RUNNER_TEMP/notarization-api-key.p8" >> "$GITHUB_ENV"
+          printf 'KEYCHAIN_SEARCH_LIST_PATH=%s\n' "$RUNNER_TEMP/original-keychain-search-list" >> "$GITHUB_ENV"
       - name: Validate release settings
         env:
           CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
