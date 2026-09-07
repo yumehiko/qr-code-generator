@@ -1,17 +1,35 @@
 # Contributing
 
-## 作業の流れ
+## Local commands
 
-1. 作業内容を既存の GitHub Issue に紐づける。重複するIssueは作成しない。
-2. Issue単位の実装担当（Terra/Luna）が変更し、テストを実行してPRを提出する。
-3. 別担当（Sol/Terra）がIssueの受入条件とPRのHEADを確認する。
-4. 修正が入った場合は同じPRのHEADを再レビューし、確認後に通常の保護された手順でマージする。
+Run commands from the repository root, or invoke the scripts from any working
+directory. Each script resolves the repository root itself.
 
-作業状態は GitHub Issues に記録し、設計資料は参照として扱います。公開設定は変更しません。
+```bash
+scripts/test.sh                 # Swift package tests
+swift build -c release          # release executable
+scripts/build-app.sh            # app bundle in dist/
+scripts/build-release.sh        # optimized app bundle in dist/
+scripts/sign-app.sh             # ad-hoc sign a release bundle
+scripts/create-dmg.sh           # package the release bundle in dist/
+scripts/create-iconset.sh       # regenerate assets/icons/AppIcon.icns
+```
 
-## 提出前の確認
+`scripts/integration-test.sh` runs the test suite and a release build. The app
+bundle scripts place all generated bundles and disk images in `dist/`, which is
+ignored by Git.
 
-- `swift test` または `./run_tests.sh` が通ること
-- 変更に応じたビルド確認を行うこと
-- Issueの受入条件とPRの変更内容が対応していること
-- 秘密の実値、認証情報、個人環境の絶対パスを含めないこと
+## Repository layout
+
+- `Sources/` and `Tests/`: Swift package code, tests, and runtime resources.
+- `scripts/`: local build, test, signing, icon, and packaging commands.
+- `assets/icons/`: editable icon source (`Icon.ai`) and generated ICNS icon.
+- `config/macos/`: bundle metadata and signing entitlements.
+- `docs/`: development documentation and historical audit records.
+
+## Submission checks
+
+- Run `scripts/test.sh` or `swift test`.
+- Run an appropriate build command for the changed files.
+- Keep credentials, personal details, and local absolute paths out of commits,
+  Issues, and pull requests.

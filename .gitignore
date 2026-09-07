@@ -29,12 +29,7 @@ Package.resolved
 *.xcodeproj
 
 # Build artifacts
-QR Code Generator.app/
-*.app
-*.dmg
-AppIcon.iconset/
-temp.iconset/
-dmg-contents/
+dist/
 
 # Local agent and workflow state
 .claude/
