@@ -10,8 +10,13 @@ codes from image files. It works locally on your Mac and supports SVG export.
 
 ## Install and launch
 
-This project does not currently publish downloadable releases. To build it from
-source, clone the repository and run:
+When a signed release is available, download the universal `.dmg` from the
+[GitHub Releases page](https://github.com/yumehiko/qr-code-generator/releases),
+open it, and drag **QR Code Generator.app** to Applications. The accompanying
+`SHA256SUMS.txt` file lets you verify the download. A release DMG supports both
+Apple silicon and Intel Macs running macOS 11 or later.
+
+To build from source, clone the repository and run:
 
 ```bash
 git clone https://github.com/yumehiko/qr-code-generator.git

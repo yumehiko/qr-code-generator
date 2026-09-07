@@ -7,7 +7,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$REPO_ROOT/dist"
 APP_NAME="QR Code Generator"
 APP_BUNDLE="$OUTPUT_DIR/$APP_NAME.app"
-DMG_FILENAME="$OUTPUT_DIR/QRCodeGenerator-1.0.0.dmg"
+RELEASE_VERSION="${1:-${RELEASE_VERSION:-1.0.0}}"
+DMG_FILENAME="$OUTPUT_DIR/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg"
 DMG_TEMP="$OUTPUT_DIR/QRCodeGenerator-temp.dmg"
 DMG_VOLUME_NAME="QR Code Generator"
 DMG_CONTENTS="$(mktemp -d "${TMPDIR:-/tmp}/qr-code-generator-dmg.XXXXXX")"
@@ -21,6 +22,8 @@ cleanup() {
     rm -rf "$DMG_CONTENTS"
 }
 trap cleanup EXIT
+
+[[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Release version must be Major.Minor.Patch." >&2; exit 1; }
 
 if [ ! -d "$APP_BUNDLE" ]; then
     echo "App bundle not found. Run scripts/build-release.sh first."
