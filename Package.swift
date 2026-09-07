@@ -43,7 +43,10 @@ let package = Package(
         .testTarget(
             name: "QRCodeGeneratorTests",
             dependencies: ["QRCodeGenerator"],
-            path: "Tests"
+            path: "Tests",
+            linkerSettings: [
+                .linkedFramework("Vision")
+            ]
         )
     ]
 )

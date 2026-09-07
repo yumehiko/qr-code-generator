@@ -1,4 +1,6 @@
 import XCTest
+import AppKit
+import Vision
 @testable import QRCodeGenerator
 
 final class QRCodeGeneratorTests: XCTestCase {
@@ -19,6 +21,48 @@ final class QRCodeGeneratorTests: XCTestCase {
         let svg = QRCodeGenerator().convertToSVG(from: "https://example.com", correctionLevel: .medium)
         XCTAssertTrue(svg?.contains("<svg") == true)
         XCTAssertTrue(svg?.contains("</svg>") == true)
+        // Core Image's symbol has one white module before the finder pattern;
+        // the exported SVG adds four more modules around that symbol.
+        XCTAssertTrue(svg?.contains("<rect x=\"50\" y=\"50\"") == true)
+    }
+
+    func testGeneratedImagesHaveOpaqueFourModuleQuietZoneForDifferentSymbolSizes() throws {
+        let generator = QRCodeGenerator()
+        let inputs = ["small", String(repeating: "A", count: 300)]
+
+        XCTAssertEqual(
+            QRCodeGenerator.quietZonePixelSize,
+            QRCodeGenerator.modulePixelSize * QRCodeGenerator.quietZoneModules
+        )
+
+        for input in inputs {
+            let image = try XCTUnwrap(generator.generate(from: input, correctionLevel: .medium))
+            let cgImage = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+            let pixels = try rgbaPixels(in: cgImage)
+            let quietZone = QRCodeGenerator.quietZonePixelSize
+
+            XCTAssertGreaterThan(cgImage.width, quietZone * 2)
+            XCTAssertGreaterThan(cgImage.height, quietZone * 2)
+            XCTAssertOpaqueWhiteBorder(
+                pixels: pixels,
+                width: cgImage.width,
+                height: cgImage.height,
+                borderWidth: quietZone
+            )
+        }
+    }
+
+    func testGeneratedImageCanBeReadBackAfterQuietZoneIsAdded() throws {
+        let text = "https://example.com/quiet-zone"
+        let image = try XCTUnwrap(QRCodeGenerator().generate(from: text, correctionLevel: .medium))
+        let cgImage = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let request = VNDetectBarcodesRequest()
+        request.symbologies = [.qr]
+
+        try VNImageRequestHandler(cgImage: cgImage).perform([request])
+
+        let decodedValues = request.results?.compactMap(\.payloadStringValue) ?? []
+        XCTAssertTrue(decodedValues.contains(text))
     }
 
     func testValidatorHonorsCorrectionLevelLimit() {
@@ -42,6 +86,46 @@ final class QRCodeGeneratorTests: XCTestCase {
             viewModel.generateQRCode()
             XCTAssertNil(viewModel.qrCodeImage)
             XCTAssertFalse(viewModel.canExport)
+        }
+    }
+
+    private func rgbaPixels(in image: CGImage) throws -> [UInt8] {
+        var pixels = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+
+        let context = pixels.withUnsafeMutableBytes { buffer in
+            CGContext(
+                data: buffer.baseAddress,
+                width: image.width,
+                height: image.height,
+                bitsPerComponent: 8,
+                bytesPerRow: image.width * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        }
+        let bitmapContext = try XCTUnwrap(context)
+        bitmapContext.interpolationQuality = .none
+        bitmapContext.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        return pixels
+    }
+
+    private func XCTAssertOpaqueWhiteBorder(
+        pixels: [UInt8],
+        width: Int,
+        height: Int,
+        borderWidth: Int,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        for y in 0..<height {
+            for x in 0..<width where x < borderWidth || x >= width - borderWidth || y < borderWidth || y >= height - borderWidth {
+                let offset = (y * width + x) * 4
+                XCTAssertEqual(pixels[offset], 255, "Red channel at (\(x), \(y))", file: file, line: line)
+                XCTAssertEqual(pixels[offset + 1], 255, "Green channel at (\(x), \(y))", file: file, line: line)
+                XCTAssertEqual(pixels[offset + 2], 255, "Blue channel at (\(x), \(y))", file: file, line: line)
+                XCTAssertEqual(pixels[offset + 3], 255, "Alpha channel at (\(x), \(y))", file: file, line: line)
+            }
         }
     }
 }
