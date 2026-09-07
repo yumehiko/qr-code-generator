@@ -53,7 +53,8 @@ missing or notarization fails.
 
 For the first release, create the Developer ID Application certificate in the
 Apple Developer account, create an App Store Connect API key, set the variable
-and environment secrets, then create a valid tag such as `v1.2.3` on `main`.
+and environment secrets, then create a `vMajor.Minor.Patch` tag such as `v1.2.3`
+on `main`.
 The workflow builds arm64 and x86_64 executables, combines them into a universal
 app, signs with Hardened Runtime and a secure timestamp, notarizes and staples
 the app, then packages, notarizes, staples, and verifies the DMG before creating

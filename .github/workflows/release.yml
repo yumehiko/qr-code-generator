@@ -27,7 +27,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          [[ "$TAG" =~ ^v[0-9]+(\.[0-9]+){0,2}([-.][0-9A-Za-z.-]+)?$ ]]
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           VERSION="${TAG#v}"
           COMMIT="$(git rev-list -n 1 "$TAG")"
           git fetch origin main:refs/remotes/origin/main
@@ -45,18 +45,27 @@ jobs:
       RELEASE_VERSION: ${{ needs.preflight.outputs.release_version }}
       BUILD_VERSION: ${{ github.run_number }}
       APPSTORE_CONNECT_ISSUER_ID: ${{ secrets.APPSTORE_CONNECT_ISSUER_ID }}
+      CERTIFICATE_PATH: ${{ runner.temp }}/developer-id.p12
+      SIGNING_KEYCHAIN_PATH: ${{ runner.temp }}/signing.keychain-db
+      NOTARIZATION_KEY_PATH: ${{ runner.temp }}/notarization-api-key.p8
+      KEYCHAIN_SEARCH_LIST_PATH: ${{ runner.temp }}/original-keychain-search-list
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.preflight.outputs.release_commit }}
       - name: Validate release settings
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          API_KEY_BASE64: ${{ secrets.APPSTORE_CONNECT_API_KEY_P8_BASE64 }}
+          APPSTORE_CONNECT_KEY_ID: ${{ secrets.APPSTORE_CONNECT_KEY_ID }}
         run: |
           set -euo pipefail
           [[ -n "$BUNDLE_ID" && "$BUNDLE_ID" != com.example.* ]]
-          [[ -n "${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}" ]]
-          [[ -n "${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}" ]]
-          [[ -n "${{ secrets.APPSTORE_CONNECT_API_KEY_P8_BASE64 }}" ]]
-          [[ -n "${{ secrets.APPSTORE_CONNECT_KEY_ID }}" ]]
+          [[ -n "$CERTIFICATE_BASE64" ]]
+          [[ -n "$CERTIFICATE_PASSWORD" ]]
+          [[ -n "$API_KEY_BASE64" ]]
+          [[ -n "$APPSTORE_CONNECT_KEY_ID" ]]
           [[ -n "$APPSTORE_CONNECT_ISSUER_ID" ]]
       - name: Import signing certificate
         id: signing
@@ -66,19 +75,18 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
-          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
           KEYCHAIN_PASSWORD="$(uuidgen)"
+          security list-keychains -d user > "$KEYCHAIN_SEARCH_LIST_PATH"
           printf '%s' "$CERTIFICATE_BASE64" | /usr/bin/base64 -D > "$CERTIFICATE_PATH"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$CERTIFICATE_PATH" -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
-          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | awk -F '\"' '/Developer ID Application:/ { print $2; exit }')"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$SIGNING_KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$SIGNING_KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$SIGNING_KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -k "$SIGNING_KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$SIGNING_KEYCHAIN_PATH"
+          security list-keychain -d user -s "$SIGNING_KEYCHAIN_PATH"
+          IDENTITY="$(security find-identity -v -p codesigning "$SIGNING_KEYCHAIN_PATH" | awk -F '\"' '/Developer ID Application:/ { print $2; exit }')"
           [[ -n "$IDENTITY" ]]
-          printf 'identity=%s\nkeychain=%s\ncertificate=%s\n' "$IDENTITY" "$KEYCHAIN_PATH" "$CERTIFICATE_PATH" >> "$GITHUB_OUTPUT"
+          printf 'identity=%s\n' "$IDENTITY" >> "$GITHUB_OUTPUT"
       - name: Build and sign universal app
         env:
           SIGNING_IDENTITY: ${{ steps.signing.outputs.identity }}
@@ -93,15 +101,14 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          API_KEY_PATH="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
-          printf '%s' "$API_KEY_BASE64" | /usr/bin/base64 -D > "$API_KEY_PATH"
-          printf 'path=%s\nkey_id=%s\n' "$API_KEY_PATH" "$KEY_ID" >> "$GITHUB_OUTPUT"
+          printf '%s' "$API_KEY_BASE64" | /usr/bin/base64 -D > "$NOTARIZATION_KEY_PATH"
+          printf 'key_id=%s\n' "$KEY_ID" >> "$GITHUB_OUTPUT"
       - name: Notarize and staple app
-        run: scripts/notarize.sh app "dist/QR Code Generator.app" "${{ steps.notary.outputs.path }}" "${{ steps.notary.outputs.key_id }}"
+        run: scripts/notarize.sh app "dist/QR Code Generator.app" "$NOTARIZATION_KEY_PATH" "${{ steps.notary.outputs.key_id }}"
       - name: Package, notarize, and staple DMG
         run: |
           scripts/create-dmg.sh "$RELEASE_VERSION"
-          scripts/notarize.sh dmg "dist/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg" "${{ steps.notary.outputs.path }}" "${{ steps.notary.outputs.key_id }}"
+          scripts/notarize.sh dmg "dist/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg" "$NOTARIZATION_KEY_PATH" "${{ steps.notary.outputs.key_id }}"
           scripts/verify-dmg.sh "dist/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg"
       - name: Write checksum
         run: shasum -a 256 "dist/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg" > dist/SHA256SUMS.txt
@@ -113,5 +120,15 @@ jobs:
       - name: Remove temporary credentials
         if: always()
         run: |
-          rm -f "${{ steps.signing.outputs.certificate }}" "${{ steps.notary.outputs.path }}"
-          security delete-keychain "${{ steps.signing.outputs.keychain }}" || true
+          if [ -f "$KEYCHAIN_SEARCH_LIST_PATH" ]; then
+            keychains=()
+            while IFS= read -r keychain; do
+              keychains+=("$keychain")
+            done < <(sed -E 's/^[[:space:]]*"(.*)"[[:space:]]*$/\1/' "$KEYCHAIN_SEARCH_LIST_PATH")
+            if [ "${#keychains[@]}" -gt 0 ]; then
+              security list-keychains -d user -s "${keychains[@]}" || true
+            fi
+          fi
+          rm -f "$CERTIFICATE_PATH" "$NOTARIZATION_KEY_PATH"
+          security delete-keychain "$SIGNING_KEYCHAIN_PATH" || true
+          rm -f "$KEYCHAIN_SEARCH_LIST_PATH"

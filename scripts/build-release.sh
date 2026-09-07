@@ -16,7 +16,7 @@ RELEASE_VERSION="${RELEASE_VERSION:-1.0.0}"
 BUILD_VERSION="${BUILD_VERSION:-1}"
 
 [[ "$BUNDLE_ID" =~ ^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]] || { echo "BUNDLE_ID must be a reverse-DNS identifier." >&2; exit 1; }
-[[ "$RELEASE_VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}([-.][0-9A-Za-z.-]+)?$ ]] || { echo "RELEASE_VERSION must be a valid release version." >&2; exit 1; }
+[[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "RELEASE_VERSION must be Major.Minor.Patch." >&2; exit 1; }
 [[ "$BUILD_VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]] || { echo "BUILD_VERSION must contain one to three numeric components." >&2; exit 1; }
 
 cd "$REPO_ROOT"

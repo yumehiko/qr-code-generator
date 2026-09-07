@@ -23,7 +23,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-[[ "$RELEASE_VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}([-.][0-9A-Za-z.-]+)?$ ]] || { echo "Release version must be valid." >&2; exit 1; }
+[[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Release version must be Major.Minor.Patch." >&2; exit 1; }
 
 if [ ! -d "$APP_BUNDLE" ]; then
     echo "App bundle not found. Run scripts/build-release.sh first."
