@@ -37,7 +37,9 @@ let package = Package(
             linkerSettings: [
                 .linkedFramework("CoreImage"),
                 .linkedFramework("AppKit"),
-                .linkedFramework("SwiftUI")
+                .linkedFramework("SwiftUI"),
+                .linkedFramework("Vision"),
+                .linkedFramework("ImageIO")
             ]
         ),
         .testTarget(
