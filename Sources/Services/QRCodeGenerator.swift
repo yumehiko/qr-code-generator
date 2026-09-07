@@ -5,45 +5,55 @@ import AppKit
 
 class QRCodeGenerator {
     private let context = CIContext()
+    static let modulePixelSize = 10
+    static let quietZoneModules = 4
+    static let quietZonePixelSize = modulePixelSize * quietZoneModules
     
     func generate(from text: String, correctionLevel: ErrorCorrectionLevel) -> NSImage? {
         guard !text.isEmpty else { return nil }
-        
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(text.utf8)
-        filter.correctionLevel = correctionLevel.ciLevel
-        
-        guard let outputImage = filter.outputImage else { return nil }
-        
-        let scaleX = 10.0
-        let scaleY = 10.0
-        let transformedImage = outputImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-        
-        guard let cgImage = context.createCGImage(transformedImage, from: transformedImage.extent) else {
+
+        guard let qrImage = makePaddedQRCodeImage(from: text, correctionLevel: correctionLevel),
+              let cgImage = context.createCGImage(qrImage, from: qrImage.extent) else {
             return nil
         }
         
-        return NSImage(cgImage: cgImage, size: NSSize(width: transformedImage.extent.width, height: transformedImage.extent.height))
+        return NSImage(cgImage: cgImage, size: qrImage.extent.size)
     }
     
     func convertToSVG(from text: String, correctionLevel: ErrorCorrectionLevel) -> String? {
         guard !text.isEmpty else { return nil }
         
+        guard let qrImage = makePaddedQRCodeImage(from: text, correctionLevel: correctionLevel),
+              let cgImage = context.createCGImage(qrImage, from: qrImage.extent) else {
+            return nil
+        }
+
+        return generateSVGString(from: cgImage, size: qrImage.extent.size)
+    }
+
+    private func makePaddedQRCodeImage(from text: String, correctionLevel: ErrorCorrectionLevel) -> CIImage? {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
         filter.correctionLevel = correctionLevel.ciLevel
-        
+
         guard let outputImage = filter.outputImage else { return nil }
-        
-        let scaleX = 10.0
-        let scaleY = 10.0
-        let transformedImage = outputImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-        
-        guard let cgImage = context.createCGImage(transformedImage, from: transformedImage.extent) else {
-            return nil
-        }
-        
-        return generateSVGString(from: cgImage, size: transformedImage.extent.size)
+
+        let moduleSize = CGFloat(Self.modulePixelSize)
+        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: moduleSize, y: moduleSize))
+        let quietZone = CGFloat(Self.quietZonePixelSize)
+        let translatedImage = scaledImage.transformed(by: CGAffineTransform(
+            translationX: quietZone - scaledImage.extent.minX,
+            y: quietZone - scaledImage.extent.minY
+        ))
+        let paddedExtent = CGRect(
+            x: 0,
+            y: 0,
+            width: scaledImage.extent.width + quietZone * 2,
+            height: scaledImage.extent.height + quietZone * 2
+        )
+        let opaqueWhiteBackground = CIImage(color: .white).cropped(to: paddedExtent)
+
+        return translatedImage.composited(over: opaqueWhiteBackground)
     }
     
     private func generateSVGString(from cgImage: CGImage, size: CGSize) -> String {
@@ -66,7 +76,7 @@ class QRCodeGenerator {
         let bytesPerPixel = cgImage.bitsPerPixel / 8
         let bytesPerRow = cgImage.bytesPerRow
         
-        let moduleSize = 10
+        let moduleSize = Self.modulePixelSize
         let qrWidth = width / moduleSize
         let qrHeight = height / moduleSize
         
