@@ -8,6 +8,8 @@ OUTPUT_DIR="$REPO_ROOT/dist"
 APP_NAME="QR Code Generator"
 APP_BUNDLE="$OUTPUT_DIR/$APP_NAME.app"
 RELEASE_VERSION="${1:-${RELEASE_VERSION:-1.0.0}}"
+SIGNING_IDENTITY="${SIGNING_IDENTITY:-}"
+BUNDLE_ID="${BUNDLE_ID:-com.example.qrcodegenerator}"
 DMG_FILENAME="$OUTPUT_DIR/QRCodeGenerator-${RELEASE_VERSION}-universal.dmg"
 DMG_TEMP="$OUTPUT_DIR/QRCodeGenerator-temp.dmg"
 DMG_VOLUME_NAME="QR Code Generator"
@@ -24,6 +26,7 @@ cleanup() {
 trap cleanup EXIT
 
 [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Release version must be Major.Minor.Patch." >&2; exit 1; }
+[[ "$BUNDLE_ID" =~ ^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]] || { echo "BUNDLE_ID must be a reverse-DNS identifier." >&2; exit 1; }
 
 if [ ! -d "$APP_BUNDLE" ]; then
     echo "App bundle not found. Run scripts/build-release.sh first."
@@ -61,4 +64,9 @@ hdiutil detach "$DEVICE"
 DEVICE=""
 hdiutil convert "$DMG_TEMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILENAME"
 hdiutil verify "$DMG_FILENAME"
+if [ -n "$SIGNING_IDENTITY" ]; then
+    [[ "$SIGNING_IDENTITY" == Developer\ ID\ Application:* ]] || { echo "SIGNING_IDENTITY must be a Developer ID Application identity." >&2; exit 1; }
+    codesign --force --sign "$SIGNING_IDENTITY" --timestamp --identifier "$BUNDLE_ID.dmg" "$DMG_FILENAME"
+    codesign --verify --verbose=2 "$DMG_FILENAME"
+fi
 echo "DMG created: $DMG_FILENAME"

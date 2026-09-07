@@ -12,6 +12,9 @@ ruby -ryaml -e '
   workflow = YAML.load_file(ARGV.fetch(0))
   runs = workflow.fetch("jobs").values.flat_map { |job| job.fetch("steps", []) }.map { |step| step["run"] }.compact
   abort "workflow run block contains expression expansion" if runs.any? { |run| run.include?("${{") }
+  package_step = workflow.fetch("jobs").fetch("release").fetch("steps").find { |step| step["name"] == "Package, notarize, and staple DMG" }
+  abort "DMG package step is missing" unless package_step
+  abort "DMG package step must pass the signing identity" unless package_step.dig("env", "SIGNING_IDENTITY") == "${{ steps.signing.outputs.identity }}"
 ' "$REPO_ROOT/.github/workflows/release.yml"
 
 mkdir -p "$TEMP_DIR/bin"
