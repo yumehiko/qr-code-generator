@@ -47,6 +47,23 @@ swift run
 open "QR Code Generator.app"
 ```
 
+## Verification
+
+The supported local verification commands are:
+
+```bash
+./run_tests.sh      # runs swift test
+swift build -c release
+```
+
+`swift test` validates QR image generation, SVG conversion, input limits, and
+the main-actor ViewModel state. The tests do not open save dialogs or write to
+the user's Downloads directory. To check the bundled macOS application
+manually, run `./build.sh` and open `QR Code Generator.app`.
+
+The repository requires macOS 11 or later. Building from source requires a
+Swift toolchain supplied by Xcode 13 or later.
+
 ## Usage
 
 1. **Enter Text**: Type or paste text in the input field

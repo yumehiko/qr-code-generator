@@ -18,6 +18,10 @@ let package = Package(
             name: "QRCodeGenerator",
             dependencies: [],
             path: "Sources",
+            exclude: [
+                "Resources/generate_icons.py",
+                "Resources/icon.svg"
+            ],
             resources: [
                 .copy("Resources/Assets.xcassets")
             ],

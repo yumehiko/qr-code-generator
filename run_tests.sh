@@ -1,23 +1,5 @@
 #!/bin/bash
 
-echo "QR Code Generator - Test Summary"
-echo "================================"
-echo ""
-echo "Note: Swift Package Manager doesn't support unit testing for executable targets."
-echo "Tests have been written and can be manually validated."
-echo ""
-echo "Test Files Created:"
-echo "✓ Tests/Services/QRCodeGeneratorTests.swift"
-echo "✓ Tests/Services/FileExportServiceTests.swift"
-echo "✓ Tests/ViewModels/QRCodeViewModelTests.swift"
-echo ""
-echo "Test Coverage:"
-echo "- QR Code Generation with various inputs"
-echo "- Error correction levels (L, M, Q, H)"
-echo "- SVG conversion"
-echo "- File export functionality"
-echo "- View model state management"
-echo "- Edge cases and performance"
-echo ""
-echo "To run integration tests, build and run the app:"
-echo "./build.sh && open 'QR Code Generator.app'"
+set -euo pipefail
+
+swift test
