@@ -12,7 +12,6 @@ scripts/build-app.sh            # app bundle in dist/
 scripts/build-release.sh        # optimized app bundle in dist/
 scripts/sign-app.sh             # ad-hoc sign a release bundle
 scripts/create-dmg.sh           # package the release bundle in dist/
-scripts/create-iconset.sh       # regenerate assets/icons/AppIcon.icns
 ```
 
 `scripts/integration-test.sh` runs the test suite and a release build. The app
@@ -23,7 +22,7 @@ ignored by Git.
 
 - `Sources/` and `Tests/`: Swift package code, tests, and runtime resources.
 - `scripts/`: local build, test, signing, icon, and packaging commands.
-- `assets/icons/`: editable icon source (`Icon.ai`) and generated ICNS icon.
+- `assets/icons/`: editable icon source (`Icon.ai`) and bundled ICNS icon.
 - `config/macos/`: bundle metadata and signing entitlements.
 - `docs/`: development documentation and historical audit records.
 
