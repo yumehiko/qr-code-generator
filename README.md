@@ -74,9 +74,12 @@ automation.
 - `AppIcon.icns`, `Icon.ai`, `Sources/Resources/icon.svg`, and
   `Sources/Resources/generate_icons.py` are editable or generated icon source
   material; the Swift target excludes the latter two from compilation.
-- `build.sh` creates a local app bundle. `build-release.sh` creates a release
-  bundle. `create-dmg.sh` packages an existing release bundle, while
-  `sign-app.sh` applies ad-hoc signing only.
+- `build.sh` is the recommended local app-bundle command. `build-release.sh`
+  creates a release bundle. `create-dmg.sh` packages an existing release
+  bundle, while `sign-app.sh` applies ad-hoc signing only.
+- `build_app.sh` remains a compatible alternative bundle builder that also
+  regenerates an ICNS icon. `create-iconset.sh` is the standalone icon-source
+  helper; neither is required for the normal test or build workflow.
 - Local build bundles, SwiftPM output, DMGs, iconset work directories, local
   agent state, approvals, and signing material are ignored. No CI workflow is
   added in this change because the repository has no existing Actions policy;

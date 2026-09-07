@@ -32,6 +32,9 @@ Package.resolved
 QR Code Generator.app/
 *.app
 *.dmg
+AppIcon.iconset/
+temp.iconset/
+dmg-contents/
 
 # Local agent and workflow state
 .claude/
