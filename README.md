@@ -47,6 +47,51 @@ swift run
 open "QR Code Generator.app"
 ```
 
+## Verification
+
+The supported local verification commands are:
+
+```bash
+./run_tests.sh      # runs swift test
+swift build -c release
+```
+
+`swift test` validates QR image generation, SVG conversion, input limits, and
+the main-actor ViewModel state. The tests do not open save dialogs or write to
+the user's Downloads directory. To check the bundled macOS application
+manually, run `./build.sh` and open `QR Code Generator.app`.
+
+The repository requires macOS 11 or later. Building from source requires a
+Swift 5.7 toolchain, supplied by Xcode 14 or later.
+
+`./integration_test.sh` is a compatibility entry point for the same automated
+test suite and release build. It does not launch the application or invoke UI
+automation.
+
+## Repository assets and scripts
+
+- `Sources/Resources/Assets.xcassets/` contains the runtime app icon assets.
+- `AppIcon.icns`, `Icon.ai`, `Sources/Resources/icon.svg`, and
+  `Sources/Resources/generate_icons.py` are editable or generated icon source
+  material; the Swift target excludes the latter two from compilation.
+- `build.sh` is the recommended local app-bundle command. `build-release.sh`
+  creates a release bundle. `create-dmg.sh` packages an existing release
+  bundle, while `sign-app.sh` applies ad-hoc signing only.
+- `build_app.sh` remains a compatible alternative bundle builder that also
+  regenerates an ICNS icon. `create-iconset.sh` is the standalone icon-source
+  helper; neither is required for the normal test or build workflow.
+- Local build bundles, SwiftPM output, DMGs, iconset work directories, local
+  agent state, approvals, and signing material are ignored. No CI workflow is
+  added in this change because the repository has no existing Actions policy;
+  the commands above are the CI-ready verification baseline.
+
+The previous test files were removed because they targeted properties and
+methods that no longer exist and could not compile under the ViewModel's
+`@MainActor` isolation. Their intended coverage is handled as follows: QR
+generation, correction levels, SVG conversion, limits, and ViewModel state are
+automated; file dialogs, clipboard access, debouncing, and visual UI behavior
+remain manual macOS checks because they require user-session services.
+
 ## Usage
 
 1. **Enter Text**: Type or paste text in the input field
