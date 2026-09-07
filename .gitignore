@@ -31,6 +31,22 @@ Package.resolved
 # Build artifacts
 QR Code Generator.app/
 *.app
+*.dmg
+
+# Local agent and workflow state
+.claude/
+.spec-workflow/approvals/
+
+# Credentials, signing material, and local environment settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
 
 # Python
 __pycache__/
