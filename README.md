@@ -68,9 +68,9 @@ The application follows MVVM architecture pattern:
 
 ## Development workflow
 
-作業状態の正本は GitHub Issues です。設計資料（`.spec-workflow/specs/`）は要件・設計の参照として保持し、作業の開始・完了・保留は対応する Issue に記録します。既存の完了済み20項目は棚卸し済みで、未完了として再起票しません。棚卸し結果は [`docs/issue-inventory.md`](docs/issue-inventory.md) にまとめています。
+作業状態の正本は GitHub Issues です。設計資料（`.spec-workflow/specs/`）は要件・設計の参照として保持し、作業の開始・完了・保留は対応する Issue に記録します。作業開始前に既存Issueを確認し、重複するIssueを作成しないでください。
 
-Issue 単位で実装担当（Terra/Luna）が変更を作成し、PR を提出します。別担当（Sol/Terra）が受入条件、テスト、PR の HEAD を確認し、必要な修正後に再レビューしてから通常の保護された手順でマージします。整理フェーズ（Issue #1〜#3）が完了するまで、改善や新機能の作業は保留します。公開設定は変更しません。
+Issue 単位で実装担当（Terra/Luna）が変更を作成し、PR を提出します。別担当（Sol/Terra）が受入条件、テスト、PR の HEAD を確認し、必要な修正後に再レビューしてから通常の保護された手順でマージします。
 
 Issue や PR に秘密の実値、認証情報、個人環境の絶対パスを記載しないでください。提出前に `swift test` または `./run_tests.sh`、および変更に応じたビルド確認を実行してください。
 
