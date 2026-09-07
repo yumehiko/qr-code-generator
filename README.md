@@ -31,8 +31,10 @@ swift run
 1. Enter or paste text into the input field.
 2. The preview updates automatically.
 3. Choose an error-correction level when needed. Medium is the default.
-4. Click **Save to Downloads** to export an SVG file. Hold Option (⌥) while
-   clicking, or press Command-S, to choose another save location.
+4. Click **Export SVG** to save an SVG file to Downloads. Option-click it to
+   choose another save location. Command-E exports to Downloads; choose
+   **Save As...** from the app menu or press Shift-Command-E to choose a
+   location.
 
 ## Read a QR code from an image
 
