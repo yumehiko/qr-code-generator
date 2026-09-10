@@ -3,6 +3,10 @@
 
 import json
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).with_name('vendor')))
+from qrcodegen import QrCode
 
 
 ECL = {0: "M", 1: "L", 2: "H", 3: "Q"}
@@ -175,6 +179,25 @@ def penalty(matrix):
     return score
 
 
+def nayuki_penalty(matrix):
+    """Run the vendored Nayuki implementation on an already-generated matrix."""
+    qr = QrCode.__new__(QrCode)
+    qr._size = len(matrix)
+    qr._modules = [[cell == '1' for cell in row] for row in matrix]
+    return qr._get_penalty_score()
+
+
+def assert_nayuki_reconstruction(candidates, version, level, payload):
+    ecc = {'L': QrCode.Ecc.LOW, 'M': QrCode.Ecc.MEDIUM,
+           'Q': QrCode.Ecc.QUARTILE, 'H': QrCode.Ecc.HIGH}[level]
+    for mask, matrix in enumerate(candidates):
+        encoded = QrCode(version, ecc, payload, mask)
+        reconstructed = [''.join('1' if encoded.get_module(x, y) else '0' for x in range(len(matrix)))
+                         for y in range(len(matrix))]
+        if reconstructed != matrix:
+            raise AssertionError(f'Nayuki reconstruction differs for mask {mask}')
+
+
 def analyze(record):
     symbol = crop_quiet_border(record['matrix'])
     version = (len(symbol) - 17) // 4
@@ -191,10 +214,16 @@ def analyze(record):
     }
     if record.get('candidateMatrices') is not None:
         candidates = [crop_quiet_border(candidate) for candidate in record['candidateMatrices']]
+        assert_nayuki_reconstruction(candidates, version, level, payload)
         scores = [penalty(candidate) for candidate in candidates]
+        nayuki_scores = [nayuki_penalty(candidate) for candidate in candidates]
         result.update({
             'candidateFormatMasks': [format_bits(candidate) & 7 for candidate in candidates],
             'candidatePenalties': scores, 'selectedPenalty': scores[mask],
+            'nayukiCandidatePenalties': nayuki_scores,
+            'nayukiSelectedPenalty': nayuki_scores[mask],
+            'nayukiMinimumPenalty': min(nayuki_scores),
+            'nayukiMinimumMasks': [i for i, value in enumerate(nayuki_scores) if value == min(nayuki_scores)],
             'minimumPenalty': min(scores),
             'minimumMasks': [i for i, value in enumerate(scores) if value == min(scores)],
             'selectedMatrixEqualsReconstructed': symbol == candidates[mask],
@@ -229,10 +258,23 @@ def main():
     optimization = [item for item in analyses if item['category'] == 'optimization']
     mismatches = [item for item in optimization
                   if segment_bit_size(item['segments']) != optimal_ascii_segment_bits(item['input'])]
-    print(json.dumps({
+    output = {
         'basic': basic,
-        'optimizationCheck': {'caseCount': len(optimization), 'mismatchCount': len(mismatches)},
-    }, ensure_ascii=False, indent=2))
+        'optimizationCheck': {'caseCount': len(optimization), 'mismatchCount': len(mismatches),
+                              'nayukiSelectedMinimumCount': sum(item['formatMask'] in item['nayukiMinimumMasks'] for item in basic),
+                              'zxingSelectedMinimumCount': sum(item['formatMask'] == min(range(8), key=lambda i: item['candidatePenalties'][i]) for item in basic)},
+    }
+    if '--markdown' in sys.argv:
+        print('# 解析結果\n')
+        print('| input | ECC | V | selected mask | Nayuki m0/m1/m2/m3/m4/m5/m6/m7 | ZXing m0/m1/m2/m3/m4/m5/m6/m7 |')
+        print('|---|---|---:|---:|---|---|')
+        for item in basic:
+            print(f"| {item['input']} | {item['requestedLevel']} | {item['version']} | {item['formatMask']} | "
+                  f"{'/'.join(map(str, item['nayukiCandidatePenalties']))} | {'/'.join(map(str, item['candidatePenalties']))} |")
+        print(f"\nNayuki selected-minimum count: {output['optimizationCheck']['nayukiSelectedMinimumCount']}/28")
+        print(f"ZXing selected-minimum count: {output['optimizationCheck']['zxingSelectedMinimumCount']}/28")
+    else:
+        print(json.dumps(output, ensure_ascii=False, indent=2))
 
 
 if __name__ == '__main__':
