@@ -6,56 +6,54 @@ struct ContentView: View {
     @State private var isImportingImage = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Upper section: QR Code Preview
-            VStack(spacing: 8) {
-                QRDisplayView(qrImage: viewModel.qrCodeImage)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                // Keyboard shortcuts help text
-                HStack(spacing: 20) {
-                    Label("⌘C: Copy", systemImage: "keyboard")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Label("⌘E: Export", systemImage: "keyboard")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Label("⌘⇧E: Save As", systemImage: "keyboard")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Label("⌘K: Clear Text", systemImage: "keyboard")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.bottom, 8)
-            }
-            .padding()
-            
-            Divider()
-            
-            // Lower section: Input and Controls
-            VStack(spacing: 12) {
-                HStack(spacing: 16) {
-                    TextInputView(
-                        text: $viewModel.inputText,
-                        error: viewModel.error
-                    )
-                    .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack(spacing: 16) {
+                HStack(alignment: .center, spacing: 16) {
+                    QRDisplayView(qrImage: viewModel.qrCodeImage)
+                        .frame(width: 240, height: 240)
 
-                    ControlsView(
-                        errorCorrectionLevel: $viewModel.errorCorrectionLevel,
-                        viewModel: viewModel
-                    )
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("QR Code Preview")
+                            .font(.headline)
+                        Text("Create a code from the text below, then copy or export this preview.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ExportButton(viewModel: viewModel)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                HStack(spacing: 16) {
+                    Label("⌘C Copy", systemImage: "keyboard")
+                    Label("⌘E Export", systemImage: "keyboard")
+                    Label("⌘⇧E Save As", systemImage: "keyboard")
+                    Label("⌘K Clear", systemImage: "keyboard")
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
 
                 Divider()
 
-                QRCodeReadResultsView(viewModel: viewModel) {
+                TextInputView(text: $viewModel.inputText, error: viewModel.error)
+                    .frame(maxWidth: .infinity)
+
+                ErrorCorrectionPicker(selection: $viewModel.errorCorrectionLevel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Divider()
+
+                ImageDropArea(viewModel: viewModel) {
                     isImportingImage = true
                 }
+
+                QRCodeReadResultsView(viewModel: viewModel)
             }
             .padding()
-            .frame(minHeight: 120)
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
         }
         .background(Color(NSColor.windowBackgroundColor))
         .navigationTitle("QR Code Generator")

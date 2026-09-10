@@ -81,6 +81,7 @@ struct TextInputView: View {
                             .stroke(hasError ? Color.red : Color.secondary.opacity(0.3), lineWidth: 1)
                     )
                     .cornerRadius(6)
+                    .frame(height: 108)
             }
             
             HStack {

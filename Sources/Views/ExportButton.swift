@@ -5,19 +5,17 @@ struct ExportButton: View {
     @State private var isHoveringWithOption = false
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .trailing, spacing: 6) {
+            HStack(spacing: 8) {
             // Copy to Clipboard Button
             Button(action: {
                 viewModel.copyToClipboard()
             }) {
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "doc.on.clipboard")
-                    Text("Copy To Clipboard")
-                    Spacer()
+                    Text("Copy")
                 }
-                .frame(minWidth: 150)
             }
-            .controlSize(.large)
             .disabled(!viewModel.canExport)
             .keyboardShortcut("c", modifiers: .command)
             .help("Copy QR code as SVG to clipboard")
@@ -28,14 +26,11 @@ struct ExportButton: View {
                 let withDialog = event?.modifierFlags.contains(.option) ?? false
                 viewModel.exportToSVG(withDialog: withDialog)
             }) {
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: isHoveringWithOption ? "square.and.arrow.down.on.square" : "square.and.arrow.down")
                     Text(isHoveringWithOption ? "Save As..." : "Export SVG")
-                    Spacer()
                 }
-                .frame(minWidth: 150)
             }
-            .controlSize(.large)
             .disabled(!viewModel.canExport || viewModel.isExporting)
             .keyboardShortcut("e", modifiers: .command)
             .help("Click to save to Downloads folder. Hold Option (⌥) to choose location.")
@@ -47,7 +42,8 @@ struct ExportButton: View {
                     isHoveringWithOption = false
                 }
             }
-            
+            }
+
             if let exportMessage = viewModel.exportMessage {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")

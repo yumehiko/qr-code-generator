@@ -11,12 +11,16 @@ struct ErrorCorrectionPicker: View {
             
             Picker("", selection: $selection) {
                 ForEach(ErrorCorrectionLevel.allCases) { level in
-                    Text(level.displayName)
+                    Text(level.rawValue)
                         .tag(level)
+                        .accessibilityLabel(level.displayName)
+                        .help(level.tooltip)
                 }
             }
-            .pickerStyle(.menu)
+            .labelsHidden()
+            .pickerStyle(.segmented)
             .help("Higher levels allow more damage to the QR code while maintaining readability")
+            .accessibilityLabel("Error Correction")
         }
     }
 }
