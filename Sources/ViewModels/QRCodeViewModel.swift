@@ -28,6 +28,7 @@ class QRCodeViewModel: ObservableObject {
     private let fileExporter = FileExportService()
     private var generateWorkItem: DispatchWorkItem?
     private var readTask: Task<Void, Never>?
+    private var activeReadRequestID = 0
     
     var canExport: Bool {
         qrCodeImage != nil && !inputText.isEmpty
@@ -134,19 +135,31 @@ class QRCodeViewModel: ObservableObject {
         }
     }
 
-    func readQRCode(from url: URL) {
+    @discardableResult
+    func beginImageReadRequest() -> Int {
+        activeReadRequestID &+= 1
         readTask?.cancel()
         decodedContents = []
         readErrorMessage = nil
         readCopyMessage = nil
         isReading = true
+        return activeReadRequestID
+    }
+
+    func readQRCode(from url: URL) {
+        let requestID = beginImageReadRequest()
+        readQRCode(from: url, requestID: requestID)
+    }
+
+    func readQRCode(from url: URL, requestID: Int) {
+        guard requestID == activeReadRequestID else { return }
 
         readTask = Task { [weak self] in
             let result = await Task.detached {
                 QRCodeReader().read(from: url)
             }.value
 
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, self?.activeReadRequestID == requestID else { return }
 
             self?.isReading = false
             switch result {
@@ -171,10 +184,16 @@ class QRCodeViewModel: ObservableObject {
         }
     }
 
-    func reportImageSelectionFailure(_ error: Error) {
-        readTask?.cancel()
-        decodedContents = []
-        readCopyMessage = nil
+    func reportImageSelectionFailure(_ error: Error, requestID: Int? = nil) {
+        let currentRequestID: Int
+        if let requestID {
+            guard requestID == activeReadRequestID else { return }
+            currentRequestID = requestID
+        } else {
+            currentRequestID = beginImageReadRequest()
+        }
+
+        guard currentRequestID == activeReadRequestID else { return }
         isReading = false
         readErrorMessage = "Could not select image: \(error.localizedDescription)"
     }

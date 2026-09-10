@@ -2,34 +2,10 @@ import SwiftUI
 
 struct QRCodeReadResultsView: View {
     @ObservedObject var viewModel: QRCodeViewModel
-    let selectImage: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label("Read QR Code", systemImage: "viewfinder")
-                    .font(.headline)
-                Spacer()
-                Button("Select Image...", action: selectImage)
-                    .disabled(viewModel.isReading)
-            }
-
-            if viewModel.isReading {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Reading QR code from image...")
-                        .foregroundColor(.secondary)
-                }
-            } else if let message = viewModel.readErrorMessage {
-                Label(message, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundColor(.red)
-                    .font(.caption)
-            } else if viewModel.decodedContents.isEmpty {
-                Text("Select an image containing a QR code to display its contents.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
+            if !viewModel.decodedContents.isEmpty {
                 Text("Detected \(viewModel.decodedContents.count) QR code\(viewModel.decodedContents.count == 1 ? "" : "s").")
                     .font(.caption)
                     .foregroundColor(.secondary)

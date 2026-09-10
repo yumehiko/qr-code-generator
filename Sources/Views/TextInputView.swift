@@ -66,6 +66,14 @@ struct TextInputView: View {
                 .foregroundColor(.secondary)
             
             ZStack(alignment: .topLeading) {
+                MacTextEditor(text: $text)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(hasError ? Color.red : Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+                    .cornerRadius(6)
+                    .frame(height: 108)
+
                 if text.isEmpty {
                     Text("Type or paste text here...")
                         .font(.system(size: 13))
@@ -74,13 +82,6 @@ struct TextInputView: View {
                         .padding(.vertical, 6)
                         .allowsHitTesting(false)
                 }
-                
-                MacTextEditor(text: $text)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(hasError ? Color.red : Color.secondary.opacity(0.3), lineWidth: 1)
-                    )
-                    .cornerRadius(6)
             }
             
             HStack {
