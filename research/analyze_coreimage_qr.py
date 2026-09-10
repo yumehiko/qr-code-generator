@@ -262,14 +262,15 @@ def main():
         'basic': basic,
         'optimizationCheck': {'caseCount': len(optimization), 'mismatchCount': len(mismatches),
                               'nayukiSelectedMinimumCount': sum(item['formatMask'] in item['nayukiMinimumMasks'] for item in basic),
-                              'zxingSelectedMinimumCount': sum(item['formatMask'] == min(range(8), key=lambda i: item['candidatePenalties'][i]) for item in basic)},
+                              'zxingSelectedMinimumCount': sum(item['formatMask'] in [i for i, value in enumerate(item['candidatePenalties']) if value == min(item['candidatePenalties'])] for item in basic)},
     }
     if '--markdown' in sys.argv:
         print('# 解析結果\n')
-        print('| input | ECC | V | selected mask | Nayuki m0/m1/m2/m3/m4/m5/m6/m7 | ZXing m0/m1/m2/m3/m4/m5/m6/m7 |')
-        print('|---|---|---:|---:|---|---|')
+        print('| input | ECC | V | selected mask | segments | Nayuki m0/m1/m2/m3/m4/m5/m6/m7 | ZXing m0/m1/m2/m3/m4/m5/m6/m7 |')
+        print('|---|---|---:|---:|---|---|---|')
         for item in basic:
-            print(f"| {item['input']} | {item['requestedLevel']} | {item['version']} | {item['formatMask']} | "
+            segments = ','.join(f"{segment['mode']}:{segment.get('count', segment.get('assignment'))}" for segment in item['segments'])
+            print(f"| {item['input']} | {item['requestedLevel']} | {item['version']} | {item['formatMask']} | {segments} | "
                   f"{'/'.join(map(str, item['nayukiCandidatePenalties']))} | {'/'.join(map(str, item['candidatePenalties']))} |")
         print(f"\nNayuki selected-minimum count: {output['optimizationCheck']['nayukiSelectedMinimumCount']}/28")
         print(f"ZXing selected-minimum count: {output['optimizationCheck']['zxingSelectedMinimumCount']}/28")
