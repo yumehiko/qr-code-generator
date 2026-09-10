@@ -6,12 +6,12 @@
 ## 再実行
 
 ```sh
-mkdir -p research/out
-xcrun swiftc research/coreimage_qr_probe.swift -framework AppKit -framework CoreImage -framework Vision -o research/out/coreimage_qr_probe
-research/out/coreimage_qr_probe > research/out/raw.json
-python3 research/analyze_coreimage_qr.py research/out/raw.json > research/out/analysis.json
-python3 research/analyze_coreimage_qr.py research/out/raw.json --markdown > research/results.md
-git diff --exit-code -- research/results.md
+mkdir -p docs/research/out
+xcrun swiftc docs/research/coreimage_qr_probe.swift -framework AppKit -framework CoreImage -framework Vision -o docs/research/out/coreimage_qr_probe
+docs/research/out/coreimage_qr_probe > docs/research/out/raw.json
+python3 docs/research/analyze_coreimage_qr.py docs/research/out/raw.json > docs/research/out/analysis.json
+python3 docs/research/analyze_coreimage_qr.py docs/research/out/raw.json --markdown > docs/research/results.md
+git diff --exit-code -- docs/research/results.md
 ```
 
 Swift は CoreImage の出力をグレースケールの各画素へ描画して `0`/`1` 行列にする。

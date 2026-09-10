@@ -64,5 +64,5 @@ Build, test, packaging, and contribution guidance is in
 ## License
 
 This project is licensed under the [MIT License](LICENSE). The license covers
-the application source and repository-owned icon assets, including the editable
-`assets/icons/Icon.ai` source and its derived icons.
+the application source and repository-owned icon assets, including the bundled
+ICNS icon and app icon asset catalog.

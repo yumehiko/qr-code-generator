@@ -30,6 +30,7 @@ Package.resolved
 
 # Build artifacts
 dist/
+docs/research/out/
 
 # Local agent and workflow state
 .claude/

@@ -21,10 +21,10 @@ ignored by Git.
 ## Repository layout
 
 - `Sources/` and `Tests/`: Swift package code, tests, and runtime resources.
-- `scripts/`: local build, test, signing, icon, and packaging commands.
-- `assets/icons/`: editable icon source (`Icon.ai`) and bundled ICNS icon.
+- `scripts/`: local build, test, signing, and packaging commands.
+- `assets/icons/`: bundled ICNS icon used by app bundle builds.
 - `config/macos/`: bundle metadata and signing entitlements.
-- `docs/`: development documentation and historical audit records.
+- `docs/`: development documentation, Core Image research, and historical audit records.
 
 ## Maintainer release setup
 
