@@ -18,7 +18,7 @@ struct ImageDropArea: View {
 
             dropContent
                 .padding(12)
-                .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 74, alignment: .center)
                 .background(isTargeted ? Color.accentColor.opacity(0.14) : Color(NSColor.controlBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -29,9 +29,6 @@ struct ImageDropArea: View {
                 .accessibilityLabel("QR code image drop area")
                 .accessibilityHint("Drop an image file here to read its QR codes")
 
-            Text("Drop an image here, or select one. If several files are dropped, only the first file is read.")
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
     }
 
@@ -47,10 +44,8 @@ struct ImageDropArea: View {
                 .foregroundColor(.red)
                 .font(.caption)
         } else {
-            Label(
-                viewModel.decodedContents.isEmpty ? "Drop an image file to read its QR code" : "Drop another image file to read it",
-                systemImage: "arrow.down.doc"
-            )
+            Image(systemName: "arrow.down.doc")
+                .font(.title2)
             .foregroundColor(.secondary)
         }
     }

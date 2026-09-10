@@ -8,24 +8,14 @@ struct ContentView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                HStack(alignment: .center, spacing: 16) {
+                VStack(spacing: 10) {
                     QRDisplayView(qrImage: viewModel.qrCodeImage)
                         .frame(width: 240, height: 240)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("QR Code Preview")
-                            .font(.headline)
-                        Text("Create a code from the text below, then copy or export this preview.")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        ExportButton(viewModel: viewModel)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    ExportButton(viewModel: viewModel)
                 }
+                .frame(maxWidth: .infinity)
 
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Label("⌘C Copy", systemImage: "keyboard")
                     Label("⌘E Export", systemImage: "keyboard")
                     Label("⌘⇧E Save As", systemImage: "keyboard")
