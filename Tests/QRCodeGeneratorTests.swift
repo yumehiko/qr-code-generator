@@ -21,34 +21,42 @@ final class QRCodeGeneratorTests: XCTestCase {
         let svg = QRCodeGenerator().convertToSVG(from: "https://example.com", correctionLevel: .medium)
         XCTAssertTrue(svg?.contains("<svg") == true)
         XCTAssertTrue(svg?.contains("</svg>") == true)
-        // Core Image's symbol has one white module before the finder pattern;
-        // the exported SVG adds four more modules around that symbol.
-        XCTAssertTrue(svg?.contains("<rect x=\"50\" y=\"50\"") == true)
+        XCTAssertTrue(svg?.contains("<rect x=\"40\" y=\"40\"") == true)
     }
 
-    func testGeneratedImagesHaveOpaqueFourModuleQuietZoneForDifferentSymbolSizes() throws {
+    func testGeneratedOutputsHaveExactlyFourModuleQuietZoneForAllCorrectionLevelsAndSymbolSizes() throws {
         let generator = QRCodeGenerator()
-        let inputs = ["small", String(repeating: "A", count: 300)]
+        let inputs = ["small", String(repeating: "longer QR content ", count: 5)]
 
         XCTAssertEqual(
             QRCodeGenerator.quietZonePixelSize,
             QRCodeGenerator.modulePixelSize * QRCodeGenerator.quietZoneModules
         )
 
-        for input in inputs {
-            let image = try XCTUnwrap(generator.generate(from: input, correctionLevel: .medium))
-            let cgImage = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
-            let pixels = try rgbaPixels(in: cgImage)
-            let quietZone = QRCodeGenerator.quietZonePixelSize
+        for correctionLevel in ErrorCorrectionLevel.allCases {
+            for input in inputs {
+                let image = try XCTUnwrap(generator.generate(from: input, correctionLevel: correctionLevel))
+                let cgImage = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+                let pixels = try rgbaPixels(in: cgImage)
+                let blackBounds = try XCTUnwrap(blackPixelBounds(pixels: pixels, width: cgImage.width, height: cgImage.height))
+                let quietZone = QRCodeGenerator.quietZonePixelSize
 
-            XCTAssertGreaterThan(cgImage.width, quietZone * 2)
-            XCTAssertGreaterThan(cgImage.height, quietZone * 2)
-            XCTAssertOpaqueWhiteBorder(
-                pixels: pixels,
-                width: cgImage.width,
-                height: cgImage.height,
-                borderWidth: quietZone
-            )
+                XCTAssertOpaqueWhiteBorder(pixels: pixels, width: cgImage.width, height: cgImage.height, borderWidth: quietZone)
+                XCTAssertEqual(blackBounds.minX, quietZone, "left quiet zone for \(correctionLevel.rawValue), \(input)")
+                XCTAssertEqual(blackBounds.minY, quietZone, "bottom quiet zone for \(correctionLevel.rawValue), \(input)")
+                XCTAssertEqual(cgImage.width - blackBounds.maxX - 1, quietZone, "right quiet zone for \(correctionLevel.rawValue), \(input)")
+                XCTAssertEqual(cgImage.height - blackBounds.maxY - 1, quietZone, "top quiet zone for \(correctionLevel.rawValue), \(input)")
+
+                let svg = try XCTUnwrap(generator.convertToSVG(from: input, correctionLevel: correctionLevel))
+                let svgBounds = try XCTUnwrap(svgBlackPixelBounds(in: svg))
+                XCTAssertTrue(svg.contains("<rect width=\"100%\" height=\"100%\" fill=\"white\"/>"))
+                XCTAssertEqual(svgBounds.width, cgImage.width)
+                XCTAssertEqual(svgBounds.height, cgImage.height)
+                XCTAssertEqual(svgBounds.minX, quietZone, "SVG left quiet zone for \(correctionLevel.rawValue), \(input)")
+                XCTAssertEqual(svgBounds.minY, quietZone, "SVG bottom quiet zone for \(correctionLevel.rawValue), \(input)")
+                XCTAssertEqual(svgBounds.width - svgBounds.maxX - 1, quietZone, "SVG right quiet zone for \(correctionLevel.rawValue), \(input)")
+                XCTAssertEqual(svgBounds.height - svgBounds.maxY - 1, quietZone, "SVG top quiet zone for \(correctionLevel.rawValue), \(input)")
+            }
         }
     }
 
@@ -227,6 +235,32 @@ final class QRCodeGeneratorTests: XCTestCase {
         XCTFail("Timed out waiting for QR code reading")
     }
 
+    private func blackPixelBounds(
+        pixels: [UInt8],
+        width: Int,
+        height: Int
+    ) -> (minX: Int, minY: Int, maxX: Int, maxY: Int)? {
+        var minX = width
+        var minY = height
+        var maxX = -1
+        var maxY = -1
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = (y * width + x) * 4
+                if pixels[offset] < 128 || pixels[offset + 1] < 128 || pixels[offset + 2] < 128 {
+                    minX = min(minX, x)
+                    minY = min(minY, y)
+                    maxX = max(maxX, x)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+
+        guard maxX >= 0 else { return nil }
+        return (minX, minY, maxX, maxY)
+    }
+
     private func XCTAssertOpaqueWhiteBorder(
         pixels: [UInt8],
         width: Int,
@@ -244,5 +278,40 @@ final class QRCodeGeneratorTests: XCTestCase {
                 XCTAssertEqual(pixels[offset + 3], 255, "Alpha channel at (\(x), \(y))", file: file, line: line)
             }
         }
+    }
+
+    private func svgBlackPixelBounds(in svg: String) -> (minX: Int, minY: Int, maxX: Int, maxY: Int, width: Int, height: Int)? {
+        let lines = svg.split(separator: "\n")
+        guard let svgLine = lines.first(where: { $0.contains("<svg ") }),
+              let width = integerAttribute(named: "width", in: String(svgLine)),
+              let height = integerAttribute(named: "height", in: String(svgLine)) else {
+            return nil
+        }
+
+        var minX = width
+        var minY = height
+        var maxX = -1
+        var maxY = -1
+
+        for line in lines where line.contains("fill=\"black\"") {
+            let rect = String(line)
+            guard let x = integerAttribute(named: "x", in: rect),
+                  let y = integerAttribute(named: "y", in: rect) else {
+                return nil
+            }
+            minX = min(minX, x)
+            minY = min(minY, y)
+            maxX = max(maxX, x + QRCodeGenerator.modulePixelSize - 1)
+            maxY = max(maxY, y + QRCodeGenerator.modulePixelSize - 1)
+        }
+
+        guard maxX >= 0 else { return nil }
+        return (minX, minY, maxX, maxY, width, height)
+    }
+
+    private func integerAttribute(named name: String, in element: String) -> Int? {
+        guard let valueStart = element.range(of: "\(name)=\"")?.upperBound else { return nil }
+        let value = element[valueStart...].prefix { $0 != "\"" }
+        return Int(value)
     }
 }
