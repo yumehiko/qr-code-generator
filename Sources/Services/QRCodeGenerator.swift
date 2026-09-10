@@ -8,6 +8,7 @@ class QRCodeGenerator {
     static let modulePixelSize = 10
     static let quietZoneModules = 4
     static let quietZonePixelSize = modulePixelSize * quietZoneModules
+    private static let coreImageQuietZoneModules = 1
     
     func generate(from text: String, correctionLevel: ErrorCorrectionLevel) -> NSImage? {
         guard !text.isEmpty else { return nil }
@@ -40,16 +41,20 @@ class QRCodeGenerator {
 
         let moduleSize = CGFloat(Self.modulePixelSize)
         let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: moduleSize, y: moduleSize))
+        // CIQRCodeGenerator includes a one-module white border; replace it with the QR-standard four-module quiet zone.
+        let coreImageQuietZone = moduleSize * CGFloat(Self.coreImageQuietZoneModules)
+        let symbolExtent = scaledImage.extent.insetBy(dx: coreImageQuietZone, dy: coreImageQuietZone)
+        let symbolImage = scaledImage.cropped(to: symbolExtent)
         let quietZone = CGFloat(Self.quietZonePixelSize)
-        let translatedImage = scaledImage.transformed(by: CGAffineTransform(
-            translationX: quietZone - scaledImage.extent.minX,
-            y: quietZone - scaledImage.extent.minY
+        let translatedImage = symbolImage.transformed(by: CGAffineTransform(
+            translationX: quietZone - symbolExtent.minX,
+            y: quietZone - symbolExtent.minY
         ))
         let paddedExtent = CGRect(
             x: 0,
             y: 0,
-            width: scaledImage.extent.width + quietZone * 2,
-            height: scaledImage.extent.height + quietZone * 2
+            width: symbolExtent.width + quietZone * 2,
+            height: symbolExtent.height + quietZone * 2
         )
         let opaqueWhiteBackground = CIImage(color: .white).cropped(to: paddedExtent)
 
