@@ -151,7 +151,7 @@ def parse_segments(data, version):
     return segments
 
 
-def penalty(matrix, n3_style='nayuki'):
+def penalty(matrix):
     n = len(matrix)
     score = 0
     for lines in (matrix, [''.join(matrix[y][x] for y in range(n)) for x in range(n)]):
@@ -165,15 +165,8 @@ def penalty(matrix, n3_style='nayuki'):
             if run >= 5: score += run - 2
             for index in range(n - 6):
                 if line[index:index + 7] == '1011101':
-                    before = index >= 4 and line[index - 4:index] == '0000'
-                    after = index + 11 <= n and line[index + 7:index + 11] == '0000'
-                    if n3_style == 'zxing':
-                        score += 40 if before or after else 0
-                    else:
-                        # Nayuki pads each line with four light modules and scores both sides.
-                        before = before or index == 0
-                        after = after or index + 7 == n
-                        score += 40 * (int(before) + int(after))
+                    if index >= 4 and line[index - 4:index] == '0000': score += 40
+                    if index + 11 <= n and line[index + 7:index + 11] == '0000': score += 40
     for y in range(n - 1):
         for x in range(n - 1):
             if matrix[y][x] == matrix[y][x + 1] == matrix[y + 1][x] == matrix[y + 1][x + 1]: score += 3
@@ -198,12 +191,10 @@ def analyze(record):
     }
     if record.get('candidateMatrices') is not None:
         candidates = [crop_quiet_border(candidate) for candidate in record['candidateMatrices']]
-        scores = [penalty(candidate, 'nayuki') for candidate in candidates]
-        zxing_scores = [penalty(candidate, 'zxing') for candidate in candidates]
+        scores = [penalty(candidate) for candidate in candidates]
         result.update({
             'candidateFormatMasks': [format_bits(candidate) & 7 for candidate in candidates],
             'candidatePenalties': scores, 'selectedPenalty': scores[mask],
-            'zxingCandidatePenalties': zxing_scores,
             'minimumPenalty': min(scores),
             'minimumMasks': [i for i, value in enumerate(scores) if value == min(scores)],
             'selectedMatrixEqualsReconstructed': symbol == candidates[mask],

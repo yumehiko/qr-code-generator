@@ -2,6 +2,7 @@
 
 このディレクトリの二つのスクリプトは、`CIQRCodeGenerator` が生成した
 モジュール行列と、同じ行列を Vision で読んだ `CIQRCodeDescriptor` を記録・解析する。
+製品ターゲット、`Package.swift`、外部依存は変更しない。
 
 ## 再実行
 
@@ -22,14 +23,7 @@ Vision の訂正済み payload を使う。各候補は同 payload・version・E
 
 候補ペナルティは、外側の白 1 モジュールを除いた symbol に対するスクリプトの N1--N4 合計である。
 N1 は連続 5 以上、N2 は 2x2、N3 は `00001011101` または `10111010000`、N4 は黒モジュール比で計算する。
-列 `m0...m7` は mask 0...7 の順である。JSON の `candidatePenalties` は Nayuki の端部の白 4 モジュール補完と両側加算を使う N3、`zxingCandidatePenalties` は ZXing の範囲外不成立かつ片側成立で 40 を使う N3 である。N1、N2、N4 は両者で共通である。
-
-## 出典
-
-- Apple: [CIQRCodeGenerator](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Reference/CoreImageFilterReference/)
-- Apple: [CIQRCodeDescriptor.errorCorrectedPayload](https://developer.apple.com/documentation/coreimage/ciqrcodedescriptor/errorcorrectedpayload-swift.property)
-- QR Code specification: [ISO/IEC 18004:2015, §7.8.3.1 と Table 11](https://nuintun.github.io/qrcode/spec/ISO-IEC-18004-2015.pdf)
-- N3 の実装参照: [Nayuki QR Code generator library](https://www.nayuki.io/page/qr-code-generator-library)、[ZXing MaskUtil](https://github.com/zxing/zxing/blob/zxing-3.5.3/core/src/main/java/com/google/zxing/qrcode/encoder/MaskUtil.java)（ZXing tag `zxing-3.5.3`）
+列 `m0...m7` は mask 0...7 の順である。
 
 ## 実測環境
 
@@ -41,7 +35,6 @@ N1 は連続 5 以上、N2 は 2x2、N3 は `00001011101` または `10111010000
 すべての行で、形式情報から得た ECC・mask は Vision の `errorCorrectionLevel`・`maskPattern` と一致した。
 全候補で、再生成した候補の形式情報の mask は要求した 0...7 と一致した。選択済み行列は、その mask の再生成行列と一致した。
 全 byte セグメントの payload は入力の UTF-8 bytes と一致した。ECI mode はこの 28 件の訂正済み payload には現れなかった。
-Nayuki 定義の最小 mask と形式情報の mask は、28 件中 23 件で一致した。各候補の両スコアは再実行時に `analysis.json` の `candidatePenalties` と `zxingCandidatePenalties` に出力される。
 
 |入力|ECC|version|mask|segments|m0/m1/m2/m3/m4/m5/m6/m7|
 |---|---:|---:|---:|---|---|
